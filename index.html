@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QA Career Resources — Jobs Cracked</title>
+<style>
+  :root {
+    --bg: #0F1419;
+    --card: #1B232E;
+    --card2: #232E3B;
+    --border: #2A3543;
+    --pass: #2DD4A8;
+    --warn: #F5A623;
+    --fail: #E05252;
+    --blue: #5B9BD5;
+    --purp: #B07CC6;
+    --txt: #E8EDF2;
+    --body: #B8C2CE;
+    --mut: #8B98A8;
+    --dim: #5A6678;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--txt);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    min-height: 100vh;
+    padding: 40px 20px;
+    line-height: 1.6;
+  }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  .terminal-line {
+    font-family: "Courier New", monospace;
+    font-size: 13px;
+    color: var(--mut);
+    margin-bottom: 12px;
+  }
+  .terminal-line .prompt { color: var(--pass); }
+
+  .brand {
+    display: inline-block;
+    background: var(--card2);
+    border: 1px solid var(--pass);
+    color: var(--pass);
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 4px;
+    letter-spacing: 1.5px;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-size: 42px;
+    font-weight: 800;
+    color: var(--txt);
+    margin-bottom: 12px;
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+  }
+  h1 .accent { color: var(--pass); }
+
+  .subtitle {
+    color: var(--mut);
+    font-size: 16px;
+    margin-bottom: 32px;
+    max-width: 680px;
+  }
+
+  .status-dots {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 48px;
+  }
+  .status-dots .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .status-dots .meta {
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    margin-left: 8px;
+  }
+
+  .section-label {
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    color: var(--mut);
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .resource-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px 28px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    transition: all 0.2s;
+    text-decoration: none;
+    color: inherit;
+  }
+  .resource-card:hover {
+    border-color: var(--pass);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(45, 212, 168, 0.1);
+  }
+  .resource-card.featured {
+    background: var(--card2);
+    border-color: var(--pass);
+    box-shadow: 0 4px 16px rgba(45, 212, 168, 0.12);
+  }
+
+  .resource-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: var(--card2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .resource-icon.scorecard { background: rgba(45, 212, 168, 0.15); color: var(--pass); }
+  .resource-icon.sdet      { background: rgba(91, 155, 213, 0.15); color: var(--blue); }
+  .resource-icon.lead      { background: rgba(245, 166, 35, 0.15); color: var(--warn); }
+  .resource-icon.manual    { background: rgba(176, 124, 198, 0.15); color: var(--purp); }
+
+  .resource-content { flex: 1; min-width: 0; }
+  .resource-label {
+    font-family: "Courier New", monospace;
+    font-size: 10px;
+    color: var(--mut);
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .resource-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--txt);
+    margin-bottom: 6px;
+  }
+  .resource-desc {
+    font-size: 13px;
+    color: var(--body);
+    margin-bottom: 8px;
+  }
+  .resource-meta {
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    color: var(--dim);
+  }
+
+  .resource-arrow {
+    color: var(--dim);
+    font-size: 22px;
+    align-self: center;
+    transition: transform 0.2s, color 0.2s;
+  }
+  .resource-card:hover .resource-arrow {
+    color: var(--pass);
+    transform: translateX(4px);
+  }
+
+  .info-box {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--warn);
+    border-radius: 6px;
+    padding: 16px 22px;
+    margin-top: 32px;
+    font-size: 13px;
+    color: var(--body);
+  }
+  .info-box .label {
+    font-family: "Courier New", monospace;
+    color: var(--warn);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    margin-bottom: 6px;
+  }
+
+  .footer {
+    text-align: center;
+    color: var(--dim);
+    font-size: 12px;
+    font-family: "Courier New", monospace;
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    line-height: 1.8;
+  }
+  .footer a { color: var(--mut); text-decoration: none; }
+  .footer a:hover { color: var(--pass); }
+
+  @media (max-width: 600px) {
+    body { padding: 24px 16px; }
+    h1 { font-size: 32px; }
+    .resource-card { padding: 18px 20px; gap: 14px; }
+    .resource-icon { width: 40px; height: 40px; font-size: 18px; }
+    .resource-title { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="terminal-line"><span class="prompt">$</span> open qa_career_resources --webinar=2026</div>
+  <div class="brand">JOBS CRACKED · WEBINAR RESOURCES</div>
+
+  <h1>QA Career <span class="accent">Resources</span></h1>
+  <p class="subtitle">Everything I shared in the webinar, in one place. Free. No signup. Use them, share them, customise them for your own job search.</p>
+
+  <div class="status-dots">
+    <div class="dot" style="background: var(--fail);"></div>
+    <div class="dot" style="background: var(--warn);"></div>
+    <div class="dot" style="background: var(--pass);"></div>
+    <div class="meta">UPDATED JUNE 2026 · INSTANT ACCESS</div>
+  </div>
+
+  <!-- INTERACTIVE TOOL -->
+  <div class="section-label">↳ INTERACTIVE SELF-ASSESSMENT</div>
+
+  <a href="scorecard.html" class="resource-card featured">
+    <div class="resource-icon scorecard">📊</div>
+    <div class="resource-content">
+      <div class="resource-label">TOOL · 2 MINUTES</div>
+      <div class="resource-title">QA Career Readiness Scorecard — Resume Area</div>
+      <div class="resource-desc">7 honest questions. Instant score. Personalized priority fixes. Discover your weakest link before recruiters do.</div>
+      <div class="resource-meta">[Interactive · Browser-based · Print friendly]</div>
+    </div>
+    <div class="resource-arrow">→</div>
+  </a>
+
+  <!-- RESUMES -->
+  <div class="section-label" style="margin-top: 36px;">↳ ATS-READY RESUME SAMPLES</div>
+
+  <a href="resumes/SDET_Sample.docx" class="resource-card" download>
+    <div class="resource-icon sdet">📄</div>
+    <div class="resource-content">
+      <div class="resource-label">SAMPLE · 3–7 YEARS</div>
+      <div class="resource-title">SDET Resume Sample</div>
+      <div class="resource-desc">For automation engineers targeting SDET roles at product companies and GCCs. Playwright, API automation, CI/CD focus. Q-IMPACT bullets throughout.</div>
+      <div class="resource-meta">[.docx · ATS-validated · Single column · Plain text]</div>
+    </div>
+    <div class="resource-arrow">↓</div>
+  </a>
+
+  <a href="resumes/Lead_Sample.docx" class="resource-card" download>
+    <div class="resource-icon lead">📄</div>
+    <div class="resource-content">
+      <div class="resource-label">SAMPLE · 8–15 YEARS</div>
+      <div class="resource-title">QA Automation Lead Resume Sample</div>
+      <div class="resource-desc">For senior automation engineers in the "missing middle" targeting Lead, Architect, or Engineering Manager roles. Test strategy, framework architecture, AI in QE.</div>
+      <div class="resource-meta">[.docx · ATS-validated · Single column · Plain text]</div>
+    </div>
+    <div class="resource-arrow">↓</div>
+  </a>
+
+  <a href="resumes/Manual_to_Automation_Sample.docx" class="resource-card" download>
+    <div class="resource-icon manual">📄</div>
+    <div class="resource-content">
+      <div class="resource-label">SAMPLE · TRANSITION</div>
+      <div class="resource-title">Manual-to-Automation Transition Resume</div>
+      <div class="resource-desc">For manual testers actively transitioning to automation. Honest about being mid-transition, but shows concrete proof — GitHub repos, Playwright suite, AI tools in workflow.</div>
+      <div class="resource-meta">[.docx · ATS-validated · Single column · Plain text]</div>
+    </div>
+    <div class="resource-arrow">↓</div>
+  </a>
+
+  <div class="info-box">
+    <div class="label">⚠ HOW TO USE THESE</div>
+    Copy the STRUCTURE, never copy the content. Your resume should tell YOUR actual story using this proven format. The bullets, metrics, and stories here are examples — they must be replaced with your real numbers and projects. ATS systems detect copy-pasted content from common templates.
+  </div>
+
+  <div class="footer">
+    QA Career Accelerator · Jobs Cracked<br>
+    by Neelam Yadav · 20+ years in QA Automation<br>
+    <a href="https://www.linkedin.com/in/neelamyadav/" target="_blank">LinkedIn</a> &nbsp;·&nbsp; <a href="https://luma.com/n1a4lsx4" target="_blank">Next Webinar</a>
+  </div>
+
+</div>
+</body>
+</html>
