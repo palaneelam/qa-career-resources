@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QA Resume Analyzer — Jobs Cracked</title>
+
+<!-- PDF.js for PDF parsing -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<!-- Mammoth for DOCX parsing -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+<style>
+  :root {
+    --bg: #0F1419;
+    --card: #1B232E;
+    --card2: #232E3B;
+    --border: #2A3543;
+    --pass: #2DD4A8;
+    --warn: #F5A623;
+    --fail: #E05252;
+    --blue: #5B9BD5;
+    --purp: #B07CC6;
+    --txt: #E8EDF2;
+    --body: #B8C2CE;
+    --mut: #8B98A8;
+    --dim: #5A6678;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--txt);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    min-height: 100vh;
+    padding: 40px 20px;
+    line-height: 1.6;
+  }
+  .container { max-width: 880px; margin: 0 auto; }
+
+  .terminal-line {
+    font-family: "Courier New", monospace;
+    font-size: 13px;
+    color: var(--mut);
+    margin-bottom: 12px;
+  }
+  .terminal-line .prompt { color: var(--pass); }
+
+  .brand-tag {
+    display: inline-block;
+    background: var(--card2);
+    border: 1px solid var(--pass);
+    color: var(--pass);
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 4px;
+    letter-spacing: 1.5px;
+    margin-bottom: 18px;
+  }
+
+  h1 {
+    font-size: 38px;
+    font-weight: 800;
+    color: var(--txt);
+    margin-bottom: 10px;
+    line-height: 1.15;
+    letter-spacing: -0.5px;
+  }
+  h1 .accent { color: var(--pass); }
+
+  .subtitle {
+    color: var(--mut);
+    font-size: 15px;
+    margin-bottom: 24px;
+    max-width: 700px;
+  }
+
+  .privacy-banner {
+    background: rgba(45, 212, 168, 0.08);
+    border: 1px solid rgba(45, 212, 168, 0.3);
+    border-radius: 6px;
+    padding: 12px 18px;
+    margin-bottom: 32px;
+    font-size: 13px;
+    color: var(--pass);
+    font-family: "Courier New", monospace;
+  }
+  .privacy-banner .lock { margin-right: 8px; }
+
+  /* Upload zone */
+  .upload-card {
+    background: var(--card);
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 48px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 24px;
+  }
+  .upload-card:hover, .upload-card.dragover {
+    border-color: var(--pass);
+    background: var(--card2);
+  }
+  .upload-card .icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    color: var(--mut);
+  }
+  .upload-card.dragover .icon { color: var(--pass); }
+  .upload-card .text {
+    font-size: 16px;
+    color: var(--txt);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .upload-card .hint {
+    font-size: 12px;
+    color: var(--mut);
+    font-family: "Courier New", monospace;
+  }
+  #fileInput { display: none; }
+
+  .file-loaded {
+    background: var(--card2);
+    border: 1px solid var(--pass);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .file-loaded .check { color: var(--pass); font-size: 20px; }
+  .file-loaded .info {
+    flex: 1;
+    font-size: 14px;
+    color: var(--txt);
+  }
+  .file-loaded .info .name { font-weight: 600; }
+  .file-loaded .info .meta { color: var(--mut); font-size: 12px; font-family: "Courier New", monospace; }
+  .file-loaded .change-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--mut);
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+  }
+  .file-loaded .change-btn:hover { color: var(--txt); border-color: var(--mut); }
+
+  /* Form inputs */
+  .form-group {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .form-group label {
+    display: block;
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    color: var(--pass);
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+  .form-group select,
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    color: var(--txt);
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  .form-group select:focus,
+  .form-group input:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--pass);
+  }
+  .form-group textarea {
+    min-height: 120px;
+    resize: vertical;
+    font-family: "Courier New", monospace;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .form-group .helper {
+    font-size: 11px;
+    color: var(--mut);
+    margin-top: 6px;
+  }
+  .optional-tag {
+    background: var(--card2);
+    color: var(--warn);
+    font-family: "Courier New", monospace;
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    margin-left: 8px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  /* Submit */
+  .analyze-btn {
+    background: var(--pass);
+    color: var(--bg);
+    border: none;
+    width: 100%;
+    padding: 16px;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(45, 212, 168, 0.25);
+    margin-bottom: 24px;
+  }
+  .analyze-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(45, 212, 168, 0.4); }
+  .analyze-btn:disabled {
+    background: var(--card2);
+    color: var(--dim);
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+  }
+
+  /* Loading */
+  .loading {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--mut);
+    font-family: "Courier New", monospace;
+    font-size: 13px;
+  }
+  .loading.show { display: block; }
+  .spinner {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--border);
+    border-top-color: var(--pass);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 10px;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Results */
+  .results { display: none; }
+  .results.show { display: block; }
+
+  .score-hero {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    text-align: center;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .score-hero .label {
+    font-family: "Courier New", monospace;
+    color: var(--mut);
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+  }
+  .score-hero .score {
+    font-size: 64px;
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .score-hero .max { font-size: 24px; color: var(--mut); font-weight: 400; }
+  .score-hero .band {
+    font-family: "Courier New", monospace;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin: 12px 0 8px;
+  }
+  .score-hero .band-desc {
+    color: var(--body);
+    font-size: 13px;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .tab {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--mut);
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .tab:hover { color: var(--txt); }
+  .tab.active {
+    background: var(--card2);
+    color: var(--pass);
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Check items */
+  .check-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+  .check-card.pass { border-left-color: var(--pass); }
+  .check-card.warn { border-left-color: var(--warn); }
+  .check-card.fail { border-left-color: var(--fail); }
+
+  .check-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .check-icon {
+    font-family: "Courier New", monospace;
+    font-weight: 700;
+    font-size: 14px;
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .check-card.pass .check-icon { background: rgba(45, 212, 168, 0.15); color: var(--pass); }
+  .check-card.warn .check-icon { background: rgba(245, 166, 35, 0.15); color: var(--warn); }
+  .check-card.fail .check-icon { background: rgba(224, 82, 82, 0.15); color: var(--fail); }
+  .check-title { font-weight: 600; color: var(--txt); font-size: 14px; }
+  .check-detail { color: var(--body); font-size: 12.5px; margin-left: 32px; }
+  .check-fix {
+    color: var(--warn);
+    font-size: 12px;
+    margin-left: 32px;
+    margin-top: 6px;
+    font-style: italic;
+  }
+  .check-meta {
+    display: inline-block;
+    font-family: "Courier New", monospace;
+    background: var(--card2);
+    color: var(--mut);
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10.5px;
+    margin-left: 8px;
+  }
+
+  /* 6-second scan */
+  .scan-preview {
+    background: white;
+    color: #222;
+    border-radius: 8px;
+    padding: 24px;
+    font-family: "Times New Roman", serif;
+    font-size: 13px;
+    line-height: 1.55;
+    max-height: 380px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+  }
+  .scan-highlight {
+    background: rgba(45, 212, 168, 0.25);
+    padding: 2px 4px;
+    border-radius: 2px;
+    font-weight: 600;
+  }
+  .scan-info {
+    background: var(--card2);
+    border-radius: 6px;
+    padding: 12px 16px;
+    color: var(--body);
+    font-size: 12px;
+    font-family: "Courier New", monospace;
+  }
+
+  /* JD match panel */
+  .jd-empty {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px;
+    text-align: center;
+    color: var(--mut);
+    font-size: 13px;
+  }
+  .keyword-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .keyword-pill {
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 11.5px;
+    font-family: "Courier New", monospace;
+    text-align: center;
+  }
+  .keyword-pill.found {
+    background: rgba(45, 212, 168, 0.12);
+    color: var(--pass);
+    border: 1px solid rgba(45, 212, 168, 0.3);
+  }
+  .keyword-pill.missing {
+    background: rgba(224, 82, 82, 0.12);
+    color: var(--fail);
+    border: 1px solid rgba(224, 82, 82, 0.3);
+  }
+
+  /* Section header */
+  .section-h {
+    font-family: "Courier New", monospace;
+    color: var(--mut);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    margin: 16px 0 10px;
+  }
+
+  /* Action buttons */
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    flex: 1;
+    min-width: 140px;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1px solid;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .btn-secondary {
+    background: transparent;
+    color: var(--body);
+    border-color: var(--border);
+  }
+  .btn-secondary:hover { color: var(--txt); border-color: var(--mut); }
+
+  .footer {
+    text-align: center;
+    color: var(--dim);
+    font-size: 11px;
+    font-family: "Courier New", monospace;
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    line-height: 1.7;
+  }
+  .footer a { color: var(--mut); text-decoration: none; }
+  .footer a:hover { color: var(--pass); }
+
+  .error-msg {
+    background: rgba(224, 82, 82, 0.1);
+    border: 1px solid rgba(224, 82, 82, 0.3);
+    color: var(--fail);
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    display: none;
+  }
+  .error-msg.show { display: block; }
+
+  @media print {
+    body { background: white; color: black; }
+    .upload-card, .form-group, .analyze-btn, .tabs, .actions, .privacy-banner { display: none; }
+    .tab-panel { display: block !important; page-break-before: always; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="terminal-line"><span class="prompt">$</span> run resume_analyzer --version=2026.06</div>
+  <div class="brand-tag">QA RESUME ANALYZER · BETA</div>
+
+  <h1>How does your resume <span class="accent">actually</span> perform?</h1>
+  <p class="subtitle">Upload your resume. We'll simulate the 6-second recruiter scan, check ATS compatibility, and rate it across 12 dimensions. Optionally paste a target JD for keyword match analysis.</p>
+
+  <div class="privacy-banner">
+    <span class="lock">🔒</span>Your resume never leaves your browser. All analysis happens locally on your device. No upload. No storage. Refresh = gone.
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <!-- Upload zone -->
+  <div id="uploadZone" class="upload-card" onclick="document.getElementById('fileInput').click()">
+    <div class="icon">📄</div>
+    <div class="text">Click or drop your resume here</div>
+    <div class="hint">PDF or DOCX · max 5 MB · processed locally</div>
+    <input type="file" id="fileInput" accept=".pdf,.docx" onchange="handleFile(event)">
+  </div>
+
+  <div id="fileLoaded" class="file-loaded" style="display:none;">
+    <span class="check">✓</span>
+    <div class="info">
+      <div class="name" id="loadedName">—</div>
+      <div class="meta" id="loadedMeta">—</div>
+    </div>
+    <button class="change-btn" onclick="resetFile()">Change</button>
+  </div>
+
+  <!-- Experience selector -->
+  <div class="form-group">
+    <label>Years of QA experience (calibrates the analysis)</label>
+    <select id="expLevel">
+      <option value="entry">0–2 years (entry-level)</option>
+      <option value="mid" selected>3–7 years (mid-career)</option>
+      <option value="senior">8–15 years (senior / lead)</option>
+      <option value="exec">15+ years (architect / manager)</option>
+    </select>
+  </div>
+
+  <!-- Optional JD -->
+  <div class="form-group">
+    <label>Target job description <span class="optional-tag">OPTIONAL</span></label>
+    <textarea id="jdInput" placeholder="Paste the JD you're targeting. We'll show which keywords are present and missing in your resume. Leave blank to skip this analysis."></textarea>
+    <div class="helper">Adding a JD unlocks keyword-match scoring. Recommended.</div>
+  </div>
+
+  <button class="analyze-btn" id="analyzeBtn" onclick="analyze()" disabled>Analyze My Resume</button>
+
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>Running 12 analyses...
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+    <div class="score-hero">
+      <div class="label">YOUR OVERALL RESUME SCORE</div>
+      <div class="score" id="overallScore">0</div>
+      <div class="max">/ 100</div>
+      <div class="band" id="bandText">—</div>
+      <div class="band-desc" id="bandDesc">—</div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('ats')">ATS Compatibility</button>
+      <button class="tab" onclick="switchTab('scan')">6-Sec Scan</button>
+      <button class="tab" onclick="switchTab('content')">Content Quality</button>
+      <button class="tab" onclick="switchTab('jd')">JD Match</button>
+    </div>
+
+    <div class="tab-panel active" id="panel-ats">
+      <div class="section-h">↳ FORMAT &amp; STRUCTURE CHECKS</div>
+      <div id="atsChecks"></div>
+    </div>
+
+    <div class="tab-panel" id="panel-scan">
+      <div class="section-h">↳ WHAT A RECRUITER SEES IN 6–8 SECONDS</div>
+      <div class="scan-preview" id="scanPreview"></div>
+      <div class="scan-info" id="scanInfo">—</div>
+      <div class="section-h" style="margin-top: 24px;">↳ FIRST-IMPRESSION CHECKS</div>
+      <div id="scanChecks"></div>
+    </div>
+
+    <div class="tab-panel" id="panel-content">
+      <div class="section-h">↳ CONTENT QUALITY CHECKS</div>
+      <div id="contentChecks"></div>
+    </div>
+
+    <div class="tab-panel" id="panel-jd">
+      <div id="jdContent"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-secondary" onclick="window.print()">📄 Save / Print Report</button>
+      <button class="btn btn-secondary" onclick="resetAll()">↻ Analyze Another</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    QA Resume Analyzer · Jobs Cracked by Neelam Yadav<br>
+    Privacy-first: 100% browser-based · No data sent anywhere<br>
+    <a href="https://luma.com/n1a4lsx4" target="_blank">Next Webinar</a> · Built for the QA Career Accelerator program
+  </div>
+
+</div>
+
+<script>
+  // Configure PDF.js worker
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+
+  let resumeText = '';
+  let resumeFile = null;
+
+  // ─── DRAG-DROP ─────────────────────────────────────────────────────────
+  const uploadZone = document.getElementById('uploadZone');
+  ['dragenter', 'dragover'].forEach(e => uploadZone.addEventListener(e, ev => { ev.preventDefault(); uploadZone.classList.add('dragover'); }));
+  ['dragleave', 'drop'].forEach(e => uploadZone.addEventListener(e, ev => { ev.preventDefault(); uploadZone.classList.remove('dragover'); }));
+  uploadZone.addEventListener('drop', ev => {
+    if (ev.dataTransfer.files.length) {
+      document.getElementById('fileInput').files = ev.dataTransfer.files;
+      handleFile({ target: document.getElementById('fileInput') });
+    }
+  });
+
+  // ─── FILE HANDLING ────────────────────────────────────────────────────
+  async function handleFile(ev) {
+    const file = ev.target.files[0];
+    if (!file) return;
+    hideError();
+
+    if (file.size > 5 * 1024 * 1024) { showError("File too large. Max 5 MB."); return; }
+    const ext = file.name.toLowerCase().split('.').pop();
+    if (!['pdf', 'docx'].includes(ext)) { showError("Only PDF or DOCX files supported."); return; }
+
+    resumeFile = file;
+    document.getElementById('uploadZone').style.display = 'none';
+    document.getElementById('fileLoaded').style.display = 'flex';
+    document.getElementById('loadedName').textContent = file.name;
+    document.getElementById('loadedMeta').textContent = `${ext.toUpperCase()} · ${(file.size / 1024).toFixed(1)} KB`;
+
+    try {
+      if (ext === 'pdf') resumeText = await extractPdfText(file);
+      else resumeText = await extractDocxText(file);
+      if (!resumeText || resumeText.trim().length < 100) {
+        showError("Could not extract enough text. Is your resume image-based or scanned?");
+        resetFile(); return;
+      }
+      document.getElementById('analyzeBtn').disabled = false;
+    } catch (err) {
+      console.error(err);
+      showError("Failed to read the file. Try a different one.");
+      resetFile();
+    }
+  }
+
+  async function extractPdfText(file) {
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    let text = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map(it => it.str).join(' ') + '\n';
+    }
+    return text;
+  }
+
+  async function extractDocxText(file) {
+    const buf = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer: buf });
+    return result.value;
+  }
+
+  function resetFile() {
+    resumeText = ''; resumeFile = null;
+    document.getElementById('fileInput').value = '';
+    document.getElementById('uploadZone').style.display = 'block';
+    document.getElementById('fileLoaded').style.display = 'none';
+    document.getElementById('analyzeBtn').disabled = true;
+  }
+
+  function showError(msg) {
+    const e = document.getElementById('errorMsg');
+    e.textContent = msg; e.classList.add('show');
+  }
+  function hideError() { document.getElementById('errorMsg').classList.remove('show'); }
+
+  function resetAll() {
+    resetFile();
+    document.getElementById('results').classList.remove('show');
+    document.getElementById('jdInput').value = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ─── ANALYSIS LOGIC ──────────────────────────────────────────────────
+  const QA_KEYWORDS = {
+    automation: ['selenium', 'playwright', 'cypress', 'webdriver', 'appium', 'puppeteer', 'testcafe'],
+    api: ['rest api', 'restassured', 'postman', 'newman', 'graphql', 'soap', 'api testing', 'api automation'],
+    cicd: ['jenkins', 'github actions', 'gitlab ci', 'circleci', 'azure devops', 'ci/cd', 'pipeline'],
+    languages: ['java', 'python', 'typescript', 'javascript', 'c#', 'ruby'],
+    ai: ['copilot', 'chatgpt', 'claude', 'llm', 'genai', 'ai testing', 'ai-augmented'],
+    frameworks: ['testng', 'junit', 'cucumber', 'bdd', 'pytest', 'mocha', 'jest', 'page object model', 'pom'],
+    cloud: ['aws', 'azure', 'gcp', 'kubernetes', 'docker'],
+    performance: ['jmeter', 'k6', 'gatling', 'loadrunner', 'performance testing'],
+    methodology: ['agile', 'scrum', 'shift-left', 'tdd', 'bdd', 'risk-based'],
+    tools: ['jira', 'testrail', 'zephyr', 'confluence', 'git', 'github', 'gitlab'],
+  };
+
+  const ACTION_VERBS = ['designed', 'built', 'implemented', 'led', 'architected', 'developed', 'reduced', 'increased', 'improved', 'created', 'launched', 'delivered', 'shipped', 'managed', 'mentored', 'optimized', 'automated', 'integrated', 'established', 'transformed', 'scaled', 'owned', 'spearheaded', 'drove', 'pioneered', 'streamlined', 'achieved'];
+
+  const BUZZWORDS = ['responsible for', 'team player', 'detail-oriented', 'hard worker', 'go-getter', 'passionate', 'results-driven', 'self-motivated', 'think outside the box', 'synergy', 'world-class'];
+
+  const SECTION_HEADERS = {
+    summary: ['summary', 'profile', 'objective', 'about'],
+    experience: ['experience', 'employment', 'work history', 'professional experience'],
+    skills: ['skills', 'technical skills', 'core skills', 'core competencies', 'expertise'],
+    education: ['education', 'academic', 'qualification'],
+    certifications: ['certification', 'certificate', 'license'],
+  };
+
+  function analyze() {
+    document.getElementById('loading').classList.add('show');
+    document.getElementById('results').classList.remove('show');
+    setTimeout(runAnalysis, 400);
+  }
+
+  function runAnalysis() {
+    const text = resumeText;
+    const lower = text.toLowerCase();
+    const expLevel = document.getElementById('expLevel').value;
+    const jdText = document.getElementById('jdInput').value.trim();
+
+    const atsChecks = runAtsChecks(text, lower, expLevel);
+    const scanData = runScanAnalysis(text, lower);
+    const contentChecks = runContentChecks(text, lower, expLevel);
+    const jdResult = jdText ? runJdMatch(lower, jdText.toLowerCase()) : null;
+
+    renderResults(atsChecks, scanData, contentChecks, jdResult, expLevel);
+
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('results').classList.add('show');
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ─── ATS CHECKS ──────────────────────────────────────────────────────
+  function runAtsChecks(text, lower, expLevel) {
+    const checks = [];
+
+    // 1. Word count
+    const words = text.split(/\s+/).filter(Boolean).length;
+    const wcTarget = { entry: [350, 700], mid: [500, 900], senior: [700, 1100], exec: [800, 1300] }[expLevel];
+    checks.push({
+      id: 'wordcount',
+      title: `Word count: ${words}`,
+      pass: words >= wcTarget[0] && words <= wcTarget[1],
+      warn: (words >= wcTarget[0] * 0.7 && words < wcTarget[0]) || (words > wcTarget[1] && words <= wcTarget[1] * 1.2),
+      detail: `Target range for your experience level: ${wcTarget[0]}–${wcTarget[1]} words.`,
+      fix: words < wcTarget[0] ? 'Add more detail to your achievements — your resume is too thin for your experience.' :
+           words > wcTarget[1] ? 'Trim to focus on most impactful items. Recruiters skim, they don\'t read.' : null,
+      weight: 5,
+    });
+
+    // 2. Contact info
+    const hasEmail = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/.test(text);
+    const hasPhone = /(\+?\d{1,3}[-.\s]?)?(\(?\d{3,5}\)?[-.\s]?)?\d{3,5}[-.\s]?\d{4,7}/.test(text);
+    const hasLinkedin = /linkedin\.com\/in\//i.test(lower);
+    const contactScore = (hasEmail ? 1 : 0) + (hasPhone ? 1 : 0) + (hasLinkedin ? 1 : 0);
+    checks.push({
+      id: 'contact',
+      title: `Contact info: ${contactScore}/3 present`,
+      pass: contactScore === 3, warn: contactScore === 2,
+      detail: `${hasEmail ? '✓' : '✗'} Email · ${hasPhone ? '✓' : '✗'} Phone · ${hasLinkedin ? '✓' : '✗'} LinkedIn URL`,
+      fix: contactScore < 3 ? 'Add all three. LinkedIn URL is missing more often than you\'d expect — recruiters look for it.' : null,
+      weight: 6,
+    });
+
+    // 3. Standard section headings
+    const foundSections = {};
+    Object.entries(SECTION_HEADERS).forEach(([key, variants]) => {
+      foundSections[key] = variants.some(v => new RegExp(`\\b${v}\\b`, 'i').test(text));
+    });
+    const sectionCount = Object.values(foundSections).filter(Boolean).length;
+    const missing = Object.entries(foundSections).filter(([k, v]) => !v).map(([k]) => k);
+    checks.push({
+      id: 'sections',
+      title: `Standard sections: ${sectionCount}/5 detected`,
+      pass: sectionCount >= 4, warn: sectionCount >= 3,
+      detail: `${Object.entries(foundSections).map(([k, v]) => `${v ? '✓' : '✗'} ${k}`).join(' · ')}`,
+      fix: missing.length > 0 ? `Add or rename: ${missing.join(', ')}. ATS systems look for standard headings — creative names get missed.` : null,
+      weight: 7,
+    });
+
+    // 4. Bullet points
+    const bulletPattern = /(?:^|\n)\s*[•\-\*\u2022]\s/gm;
+    const bulletCount = (text.match(bulletPattern) || []).length;
+    checks.push({
+      id: 'bullets',
+      title: `Bullet points: ${bulletCount} detected`,
+      pass: bulletCount >= 8, warn: bulletCount >= 4,
+      detail: `Resumes with structured bullets are 2.5x more likely to be ranked highly by ATS.`,
+      fix: bulletCount < 8 ? 'Use bullet points for every achievement. Walls of text get scrolled past.' : null,
+      weight: 6,
+    });
+
+    // 5. Quantification
+    const numberMatches = text.match(/\d+(?:[\.,]\d+)?\s*(?:%|percent|x|users|teams|years|hours|minutes|months|members|defects|releases|cycles|tests|cases|requests|engineers|days)/gi) || [];
+    const standaloneNumbers = (text.match(/\b\d+(?:[\.,]\d+)?\b/g) || []).length;
+    const quantScore = numberMatches.length;
+    checks.push({
+      id: 'quantification',
+      title: `Quantified achievements: ${quantScore} metrics found`,
+      pass: quantScore >= 8, warn: quantScore >= 4,
+      detail: `Metrics found include numbers paired with %, time, users, defects, etc.`,
+      fix: quantScore < 8 ? 'Add specific numbers. "Reduced regression 80%" beats "improved performance." Aim for 8+ metrics.' : null,
+      weight: 8,
+    });
+
+    // 6. Tables / columns warning (heuristic)
+    const lineLengths = text.split('\n').filter(l => l.trim().length > 0).map(l => l.length);
+    const avgLineLen = lineLengths.reduce((a, b) => a + b, 0) / Math.max(lineLengths.length, 1);
+    const veryShortLines = lineLengths.filter(l => l < 30).length;
+    const totalLines = lineLengths.length;
+    const shortLineRatio = veryShortLines / Math.max(totalLines, 1);
+    const looksLikeColumns = shortLineRatio > 0.5 && avgLineLen < 50;
+    checks.push({
+      id: 'layout',
+      title: looksLikeColumns ? 'Possible multi-column layout detected' : 'Single-column flow detected',
+      pass: !looksLikeColumns, warn: false,
+      detail: `Average line length: ${avgLineLen.toFixed(0)} chars · Short lines: ${(shortLineRatio*100).toFixed(0)}%`,
+      fix: looksLikeColumns ? 'Multi-column layouts achieve only ~35% parsing accuracy. Switch to single-column.' : null,
+      weight: 7,
+    });
+
+    return checks;
+  }
+
+  // ─── 6-SECOND SCAN ──────────────────────────────────────────────────
+  function runScanAnalysis(text, lower) {
+    // First ~250 words = what a recruiter sees in 6-8 seconds
+    const words = text.split(/\s+/);
+    const first250 = words.slice(0, 250).join(' ');
+    const allKeywords = Object.values(QA_KEYWORDS).flat();
+    let highlighted = first250;
+    const found = [];
+    allKeywords.forEach(kw => {
+      const re = new RegExp(`\\b${kw.replace(/\s+/g, '\\s+')}\\b`, 'gi');
+      if (re.test(first250)) found.push(kw);
+      highlighted = highlighted.replace(re, m => `<span class="scan-highlight">${m}</span>`);
+    });
+
+    const checks = [];
+    // top role visible
+    const hasRole = /(?:senior|sdet|lead|engineer|architect|manager|analyst|qa\s|quality)/i.test(first250.substring(0, 200));
+    checks.push({
+      id: 'top-role',
+      title: hasRole ? 'Role/title visible in first 200 chars' : 'Role/title not visible in first impression',
+      pass: hasRole, warn: false,
+      detail: 'Recruiters glance at the top of the page first. Your title needs to be obvious here.',
+      fix: !hasRole ? 'Add a clear title line below your name (e.g., "Senior SDET | Playwright | API").' : null,
+      weight: 5,
+    });
+
+    checks.push({
+      id: 'first-keywords',
+      title: `Tools in first impression: ${found.length} detected`,
+      pass: found.length >= 4, warn: found.length >= 2,
+      detail: found.length > 0 ? `Found: ${found.slice(0, 6).join(', ')}${found.length > 6 ? '...' : ''}` : 'No QA tool keywords found in opening section.',
+      fix: found.length < 4 ? 'Surface your top tools in the headline or summary — not buried in page 2.' : null,
+      weight: 6,
+    });
+
+    return { highlighted, foundKeywords: found, checks };
+  }
+
+  // ─── CONTENT QUALITY ────────────────────────────────────────────────
+  function runContentChecks(text, lower, expLevel) {
+    const checks = [];
+
+    // Action verbs
+    const actionVerbCount = ACTION_VERBS.filter(v => new RegExp(`\\b${v}\\b`, 'i').test(lower)).length;
+    checks.push({
+      id: 'action-verbs',
+      title: `Strong action verbs: ${actionVerbCount} variety`,
+      pass: actionVerbCount >= 8, warn: actionVerbCount >= 4,
+      detail: `Strong verbs signal ownership and impact. Aim for 8+ distinct ones across your bullets.`,
+      fix: actionVerbCount < 8 ? 'Replace passive phrases. Use Designed/Built/Led/Reduced/Architected over "responsible for" or "worked on".' : null,
+      weight: 6,
+    });
+
+    // Buzzwords
+    const buzzCount = BUZZWORDS.filter(b => lower.includes(b)).length;
+    checks.push({
+      id: 'buzzwords',
+      title: `Buzzword count: ${buzzCount} found`,
+      pass: buzzCount === 0, warn: buzzCount <= 2,
+      detail: buzzCount > 0 ? `Buzzwords detected: ${BUZZWORDS.filter(b => lower.includes(b)).join(', ')}` : 'Clean of common filler phrases.',
+      fix: buzzCount > 0 ? 'Replace each buzzword with a concrete example. "Team player" → "Led 3 cross-functional sprints with Dev + Product."' : null,
+      weight: 5,
+    });
+
+    // QA keyword coverage by category
+    const categoryHits = {};
+    Object.entries(QA_KEYWORDS).forEach(([cat, words]) => {
+      categoryHits[cat] = words.filter(w => new RegExp(`\\b${w.replace(/\s+/g, '\\s+')}\\b`, 'i').test(lower)).length;
+    });
+    const categoriesHit = Object.values(categoryHits).filter(n => n > 0).length;
+    checks.push({
+      id: 'qa-coverage',
+      title: `QA skill coverage: ${categoriesHit}/${Object.keys(QA_KEYWORDS).length} categories`,
+      pass: categoriesHit >= 7, warn: categoriesHit >= 5,
+      detail: Object.entries(categoryHits).filter(([k,v])=>v>0).map(([k,v])=>`${k} (${v})`).join(' · '),
+      fix: categoriesHit < 7 ? 'Diversify your skill coverage. Strong resumes touch automation + API + CI/CD + cloud + AI minimum.' : null,
+      weight: 7,
+    });
+
+    // AI / modern signal
+    const aiHits = QA_KEYWORDS.ai.filter(w => lower.includes(w)).length;
+    checks.push({
+      id: 'ai-signal',
+      title: aiHits > 0 ? `AI / modern testing signal: ${aiHits} keywords` : 'No AI / modern testing signal',
+      pass: aiHits >= 2, warn: aiHits >= 1,
+      detail: '2026 JDs increasingly mention LLM, Copilot, Claude, AI-augmented testing. This is the fastest-growing differentiator.',
+      fix: aiHits === 0 ? 'Add at least one AI tool you\'ve used (Copilot for tests, Claude for analysis). Even partial exposure differentiates.' : null,
+      weight: 6,
+    });
+
+    // Length per experience
+    const charCount = text.length;
+    const estimatedPages = charCount / 3000;
+    const pageTarget = { entry: [0.7, 1.3], mid: [1.0, 2.0], senior: [1.5, 2.5], exec: [2.0, 3.0] }[expLevel];
+    const pageOk = estimatedPages >= pageTarget[0] && estimatedPages <= pageTarget[1];
+    checks.push({
+      id: 'length',
+      title: `Estimated length: ~${estimatedPages.toFixed(1)} pages`,
+      pass: pageOk, warn: false,
+      detail: `Target for your experience level: ${pageTarget[0]}–${pageTarget[1]} pages.`,
+      fix: !pageOk ? (estimatedPages < pageTarget[0] ? 'Resume too short — add depth to your role descriptions.' : 'Resume too long — trim older roles, focus on last 10 years.') : null,
+      weight: 4,
+    });
+
+    return checks;
+  }
+
+  // ─── JD MATCH ────────────────────────────────────────────────────────
+  function runJdMatch(resumeLower, jdLower) {
+    // Extract candidate keywords from JD
+    const allKeywords = Object.values(QA_KEYWORDS).flat();
+    const additionalTerms = ['agile', 'scrum', 'mentor', 'lead', 'architect', 'strategy', 'metric', 'coverage', 'pipeline', 'integration', 'fintech', 'healthtech', 'edtech', 'insurance', 'banking', 'saas', 'cloud', 'mobile', 'web', 'microservices', 'devops'];
+    const candidates = [...new Set([...allKeywords, ...additionalTerms])];
+
+    const inJd = candidates.filter(kw => new RegExp(`\\b${kw.replace(/\s+/g, '\\s+')}\\b`, 'i').test(jdLower));
+    const found = inJd.filter(kw => new RegExp(`\\b${kw.replace(/\s+/g, '\\s+')}\\b`, 'i').test(resumeLower));
+    const missing = inJd.filter(kw => !found.includes(kw));
+
+    const matchPct = inJd.length > 0 ? Math.round((found.length / inJd.length) * 100) : 0;
+    return { matchPct, found, missing, totalInJd: inJd.length };
+  }
+
+  // ─── RENDER ──────────────────────────────────────────────────────────
+  function renderResults(atsChecks, scanData, contentChecks, jdResult, expLevel) {
+    // Calculate overall score
+    const allChecks = [...atsChecks, ...scanData.checks, ...contentChecks];
+    let earned = 0, possible = 0;
+    allChecks.forEach(c => {
+      possible += c.weight;
+      if (c.pass) earned += c.weight;
+      else if (c.warn) earned += c.weight * 0.5;
+    });
+    let overall = Math.round((earned / possible) * 100);
+    // Bonus for JD match if provided
+    if (jdResult && jdResult.matchPct >= 60) overall = Math.min(100, overall + 3);
+
+    document.getElementById('overallScore').textContent = overall;
+
+    // Band
+    let bandText, bandColor, bandDesc;
+    if (overall < 40) {
+      bandText = 'HIGH RISK · NEEDS REBUILD'; bandColor = 'var(--fail)';
+      bandDesc = 'Your resume is likely being filtered out before any human reads it. Multiple foundational issues to address — but improvement here has the highest ROI in your job search.';
+    } else if (overall < 65) {
+      bandText = 'AVERAGE · REFINE'; bandColor = 'var(--warn)';
+      bandDesc = 'Your resume exists in the system but it competes with thousands that look identical. A focused 2-week rebuild moves you to Competitive.';
+    } else if (overall < 85) {
+      bandText = 'COMPETITIVE · POLISH'; bandColor = 'var(--blue)';
+      bandDesc = 'You\'re getting recruiter attention. The remaining gaps are usually small — keyword targeting and metric-driven bullets. Days, not weeks.';
+    } else {
+      bandText = 'HIGHLY COMPETITIVE · TOP 10%'; bandColor = 'var(--pass)';
+      bandDesc = 'You\'re in the top 10% on resume readiness. Recruiters likely engage with your resume when they see it. Focus time elsewhere — LinkedIn, networking, interviews.';
+    }
+    const bandEl = document.getElementById('bandText');
+    bandEl.textContent = bandText; bandEl.style.color = bandColor;
+    document.getElementById('bandDesc').textContent = bandDesc;
+
+    // Render check lists
+    renderChecks('atsChecks', atsChecks);
+    renderChecks('scanChecks', scanData.checks);
+    renderChecks('contentChecks', contentChecks);
+
+    // 6-sec scan preview
+    document.getElementById('scanPreview').innerHTML = scanData.highlighted || '(No content extracted)';
+    const kwLen = scanData.foundKeywords.length;
+    document.getElementById('scanInfo').innerHTML =
+      `<strong style="color:var(--pass);">${kwLen}</strong> QA keywords were visible in the first 250 words — what a recruiter scans in 6–8 seconds. ${kwLen >= 4 ? 'Strong first impression.' : 'Surface more of your top tools earlier.'}`;
+
+    // JD match panel
+    const jdPanel = document.getElementById('jdContent');
+    if (!jdResult) {
+      jdPanel.innerHTML = `<div class="jd-empty">
+        <div style="font-size:32px;margin-bottom:8px;">🎯</div>
+        <div style="color:var(--txt);font-size:14px;margin-bottom:6px;">No job description provided</div>
+        <div>Paste a JD in the form above and re-analyze to see keyword-match scoring against the role you're targeting.</div>
+      </div>`;
+    } else {
+      const matchColor = jdResult.matchPct >= 60 ? 'var(--pass)' : jdResult.matchPct >= 40 ? 'var(--warn)' : 'var(--fail)';
+      const matchVerdict = jdResult.matchPct >= 60 ? 'Strong match — likely to rank high in ATS.' :
+                           jdResult.matchPct >= 40 ? 'Moderate match — close some gaps for better ranking.' :
+                           'Low match — significant rewriting needed for this role.';
+      jdPanel.innerHTML = `
+        <div class="section-h">↳ JD KEYWORD MATCH ANALYSIS</div>
+        <div class="check-card ${jdResult.matchPct >= 60 ? 'pass' : jdResult.matchPct >= 40 ? 'warn' : 'fail'}">
+          <div class="check-header">
+            <span class="check-icon">${jdResult.matchPct >= 60 ? '✓' : jdResult.matchPct >= 40 ? '~' : '✗'}</span>
+            <span class="check-title">Match score: ${jdResult.matchPct}% (${jdResult.found.length}/${jdResult.totalInJd} keywords)</span>
+          </div>
+          <div class="check-detail">${matchVerdict}</div>
+          ${jdResult.matchPct < 60 ? '<div class="check-fix">Add the missing keywords below to your resume — exactly as written in the JD. ATS matches strings, not synonyms.</div>' : ''}
+        </div>
+        ${jdResult.found.length > 0 ? `<div class="section-h">✓ KEYWORDS YOU ALREADY HAVE (${jdResult.found.length})</div>
+          <div class="keyword-grid">${jdResult.found.map(k => `<div class="keyword-pill found">${k}</div>`).join('')}</div>` : ''}
+        ${jdResult.missing.length > 0 ? `<div class="section-h" style="margin-top:24px;">✗ MISSING FROM YOUR RESUME (${jdResult.missing.length})</div>
+          <div class="keyword-grid">${jdResult.missing.map(k => `<div class="keyword-pill missing">${k}</div>`).join('')}</div>` : ''}
+      `;
+    }
+  }
+
+  function renderChecks(elId, checks) {
+    const html = checks.map(c => {
+      const status = c.pass ? 'pass' : c.warn ? 'warn' : 'fail';
+      const icon = c.pass ? '✓' : c.warn ? '~' : '✗';
+      return `<div class="check-card ${status}">
+        <div class="check-header">
+          <span class="check-icon">${icon}</span>
+          <span class="check-title">${c.title}</span>
+        </div>
+        <div class="check-detail">${c.detail}</div>
+        ${c.fix ? `<div class="check-fix">→ ${c.fix}</div>` : ''}
+      </div>`;
+    }).join('');
+    document.getElementById(elId).innerHTML = html;
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('panel-' + name).classList.add('active');
+  }
+</script>
+</body>
+</html>
