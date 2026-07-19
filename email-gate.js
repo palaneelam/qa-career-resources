@@ -1,13 +1,16 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   EMAIL GATE — Reusable script for scorecard.html and analyzer.html
+   EMAIL GATE v2 — With smarter validation + server verification handling
+   
+   NEW IN v2:
+   - Front-end: extended fake-pattern detection (aa@aa.com, test@test.com, etc.)
+   - Back-end: handles server rejection responses (MX validation)
+   - User feedback: clear error message if server rejects
    
    HOW TO USE:
    1. Include this file in your HTML <head>:
       <script src="email-gate.js"></script>
-   2. Set your Google Apps Script URL below (line 22).
+   2. Set your Google Apps Script URL below (line 30).
    3. That's it — the gate appears automatically on page load.
-   
-   REQUIRES: No dependencies. Vanilla JS.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 (function() {
@@ -15,38 +18,48 @@
 
   // ─── CONFIGURATION ────────────────────────────────────────────────────
   const CONFIG = {
-    // ⚠️ REPLACE THIS with your Google Apps Script Web App URL after deployment
+    // ⚠️ REPLACE THIS with your Google Apps Script Web App URL
     endpoint: 'https://script.google.com/macros/s/AKfycby5w-GN3-O9eLMcTi1eLhIzLgaIg_35O8aCM0EWmMTEz6L7vCIdCYMfedht8H0POZjTBg/exec',
-    
-    // localStorage key — remembers users so they aren't re-gated
     storageKey: 'qa_toolkit_user_v1',
-    
-    // Days before a returning user is re-asked (0 = never re-ask)
     reaskDays: 0,
-    
-    // What page this gate is protecting (for tracking in your sheet)
     toolName: document.title || 'Unknown Tool',
+    // Enable server-side verification (requires v2 Apps Script)
+    useServerVerification: true,
   };
 
-  // ─── DISPOSABLE EMAIL DOMAIN BLOCKLIST ───────────────────────────────
+  // ─── DISPOSABLE EMAIL DOMAINS ─────────────────────────────────────────
   const DISPOSABLE_DOMAINS = new Set([
     'mailinator.com','tempmail.com','10minutemail.com','guerrillamail.com',
     'throwaway.email','yopmail.com','trashmail.com','sharklasers.com',
     'temp-mail.org','fakeinbox.com','dispostable.com','maildrop.cc',
     'getnada.com','tempinbox.com','emailondeck.com','mohmal.com',
     'harakirimail.com','mailnesia.com','spam4.me','tempail.com',
-    'dispostable.com','mytemp.email','fakemail.net','moakt.com',
-    'grr.la','guerrillamailblock.com','pokemail.net','spamgourmet.com',
+    'mytemp.email','fakemail.net','moakt.com','grr.la',
+    'guerrillamailblock.com','pokemail.net','spamgourmet.com','burnermail.io',
   ]);
 
-  // ─── UTILITY: check if user already registered ───────────────────────
+  // ─── OBVIOUS FAKE PATTERNS ────────────────────────────────────────────
+  const OBVIOUS_FAKE_DOMAINS = new Set([
+    'aa.com','a.com','b.com','c.com','abc.com','xyz.com','test.com',
+    'example.com','sample.com','demo.com','fake.com','asdf.com','qwer.com',
+    'aaa.com','bbb.com','ccc.com','zzz.com','test.test','a.a','b.b',
+    '123.com','xxx.com','yyy.com','none.com','null.com','void.com',
+    '1.com','12.com','asd.com','asdf.asdf','qwerty.com','test123.com',
+  ]);
+  
+  const OBVIOUS_FAKE_LOCAL_PARTS = new Set([
+    'a','aa','aaa','ab','abc','abcd','test','testing','asdf','qwer',
+    'qwerty','xyz','none','null','void','user','admin','fake','x','y','z',
+    '123','1234','12345','info','no','yes','anonymous',
+  ]);
+
+  // ─── LOCAL STATE ─────────────────────────────────────────────────────
   function isRegistered() {
     try {
       const stored = localStorage.getItem(CONFIG.storageKey);
       if (!stored) return false;
       const data = JSON.parse(stored);
       if (!data.email || !data.timestamp) return false;
-      
       if (CONFIG.reaskDays > 0) {
         const daysSince = (Date.now() - data.timestamp) / (1000*60*60*24);
         if (daysSince > CONFIG.reaskDays) return false;
@@ -60,39 +73,73 @@
       localStorage.setItem(CONFIG.storageKey, JSON.stringify({
         name, email, timestamp: Date.now(),
       }));
-    } catch { /* localStorage unavailable — silent fail */ }
+    } catch {}
   }
 
   // ─── EMAIL VALIDATION ────────────────────────────────────────────────
   function validateEmail(email) {
-    if (!email || typeof email !== 'string') return { ok: false, reason: 'Please enter your email.' };
+    if (!email || typeof email !== 'string') {
+      return { ok: false, reason: 'Please enter your email.' };
+    }
     const trimmed = email.trim().toLowerCase();
     
-    // RFC 5322 simplified format check
+    // Format check (RFC 5322 simplified)
     const emailRegex = /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
-    if (!emailRegex.test(trimmed)) return { ok: false, reason: 'That doesn\'t look like a valid email address.' };
-    
-    // Length check
+    if (!emailRegex.test(trimmed)) {
+      return { ok: false, reason: 'That doesn\'t look like a valid email address.' };
+    }
     if (trimmed.length > 254) return { ok: false, reason: 'Email address too long.' };
     
-    // Domain check
-    const domain = trimmed.split('@')[1];
+    const [localPart, domain] = trimmed.split('@');
+    
+    // Local part checks
+    if (localPart.length < 2) {
+      return { ok: false, reason: 'Email username is too short — please use your real email.' };
+    }
+    if (OBVIOUS_FAKE_LOCAL_PARTS.has(localPart)) {
+      return { ok: false, reason: 'Please use your real email — not a placeholder.' };
+    }
+    // Repeated characters like "aaaa" or "12345"
+    if (/^(.)\1{2,}$/.test(localPart)) {
+      return { ok: false, reason: 'Please use your real email address.' };
+    }
+    
+    // Domain checks
     if (DISPOSABLE_DOMAINS.has(domain)) {
       return { ok: false, reason: 'Please use your real email — no temporary/disposable services.' };
     }
+    if (OBVIOUS_FAKE_DOMAINS.has(domain)) {
+      return { ok: false, reason: 'That looks like a placeholder domain. Please use your real email.' };
+    }
+    // Very short domain (aa.co, x.io, etc. — likely fake, real short ones are rare)
+    const domainMain = domain.split('.')[0];
+    if (domainMain.length < 3 && !isKnownShort(domain)) {
+      return { ok: false, reason: 'That domain looks suspicious. Please check your email.' };
+    }
+    // Repeated characters in domain
+    if (/^(.)\1{2,}\./.test(domain)) {
+      return { ok: false, reason: 'That looks like a placeholder domain. Please use your real email.' };
+    }
     
-    // Check for obvious typos in popular domains
+    // Typo suggestions
     const typoMap = {
-      'gmial.com':'gmail.com','gmai.com':'gmail.com','gmail.co':'gmail.com','gmail.cm':'gmail.com',
+      'gmial.com':'gmail.com','gmai.com':'gmail.com','gmail.co':'gmail.com',
+      'gmail.cm':'gmail.com','gmail.con':'gmail.com','gmial.co':'gmail.com',
       'yahooo.com':'yahoo.com','yaho.com':'yahoo.com','yahoo.co':'yahoo.com',
       'hotmial.com':'hotmail.com','hotmai.com':'hotmail.com','hotmal.com':'hotmail.com',
-      'outlok.com':'outlook.com','outook.com':'outlook.com',
+      'outlok.com':'outlook.com','outook.com':'outlook.com','outlokk.com':'outlook.com',
+      'icloud.co':'icloud.com','iclod.com':'icloud.com',
     };
     if (typoMap[domain]) {
-      return { ok: false, reason: `Did you mean ${trimmed.split('@')[0]}@${typoMap[domain]}?` };
+      return { ok: false, reason: `Did you mean ${localPart}@${typoMap[domain]}?` };
     }
     
     return { ok: true, email: trimmed };
+  }
+  
+  function isKnownShort(domain) {
+    // Legitimate short domains
+    return ['x.com','q.com','t.co','m.com'].includes(domain);
   }
 
   function validateName(name) {
@@ -101,20 +148,29 @@
     if (trimmed.length < 2) return { ok: false, reason: 'Name too short.' };
     if (trimmed.length > 100) return { ok: false, reason: 'Name too long.' };
     if (!/[a-zA-Z]/.test(trimmed)) return { ok: false, reason: 'Please enter a valid name.' };
+    // Reject obvious fake names
+    const lowered = trimmed.toLowerCase();
+    if (['test','testing','asdf','abc','xyz','user','admin','a','aa','name'].includes(lowered)) {
+      return { ok: false, reason: 'Please enter your real name.' };
+    }
     return { ok: true, name: trimmed };
   }
 
   // ─── SUBMIT TO GOOGLE APPS SCRIPT ────────────────────────────────────
   async function submitToSheet(name, email) {
     if (!CONFIG.endpoint || CONFIG.endpoint === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
-      console.warn('Email gate: No Google Apps Script endpoint configured. Data not saved.');
+      console.warn('Email gate: No Apps Script endpoint configured.');
       return { ok: true, savedRemotely: false };
     }
+    
     try {
-      // Google Apps Script needs no-cors mode + text/plain (avoids CORS preflight)
-      await fetch(CONFIG.endpoint, {
+      // Note: With server verification enabled, we need to know the response.
+      // But no-cors mode blocks reading the response body.
+      // Solution: Use cors mode. Apps Script /exec URLs support this.
+      const response = await fetch(CONFIG.endpoint, {
         method: 'POST',
-        mode: 'no-cors',
+        mode: CONFIG.useServerVerification ? 'cors' : 'no-cors',
+        redirect: 'follow',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           name, email,
@@ -124,15 +180,43 @@
           referrer: document.referrer.substring(0, 200),
         }),
       });
+      
+      if (CONFIG.useServerVerification && response.type !== 'opaque') {
+        try {
+          const result = await response.json();
+          if (result.status === 'error') {
+            return { 
+              ok: false, 
+              serverRejected: true, 
+              reason: humanizeServerReason(result.reason, result.message),
+            };
+          }
+        } catch (parseErr) {
+          // Response wasn't JSON — treat as success (Apps Script sometimes redirects)
+        }
+      }
+      
       return { ok: true, savedRemotely: true };
+      
     } catch (err) {
-      console.error('Email gate submission failed:', err);
-      // Still let user through — don't punish them for network issues
+      console.error('Submission failed:', err);
+      // Network error — let user through (don't punish for network issues)
       return { ok: true, savedRemotely: false, error: err.message };
     }
   }
+  
+  function humanizeServerReason(reason, message) {
+    const reasons = {
+      'invalid_domain': 'This email domain doesn\'t appear to accept email. Please check your address.',
+      'no_mail_servers_configured': 'This email domain doesn\'t appear to accept email. Please double-check.',
+      'known_fake_domain': 'That looks like a placeholder domain. Please use your real email.',
+      'invalid_domain_format': 'Email domain looks invalid.',
+      'missing_fields': 'Please fill in both name and email.',
+    };
+    return reasons[reason] || message || 'Please check your email address.';
+  }
 
-  // ─── STYLE INJECTION ─────────────────────────────────────────────────
+  // ─── STYLES ──────────────────────────────────────────────────────────
   function injectStyles() {
     if (document.getElementById('eg-styles')) return;
     const s = document.createElement('style');
@@ -156,10 +240,7 @@
         color: #E8EDF2;
         max-height: 90vh; overflow-y: auto;
       }
-      .eg-terminal {
-        font-family: "Courier New", monospace;
-        font-size: 12px; color: #8B98A8; margin-bottom: 8px;
-      }
+      .eg-terminal { font-family: "Courier New", monospace; font-size: 12px; color: #8B98A8; margin-bottom: 8px; }
       .eg-terminal .p { color: #2DD4A8; }
       .eg-badge {
         display: inline-block; background: #232E3B; border: 1px solid #2DD4A8;
@@ -183,10 +264,7 @@
       }
       .eg-input:focus { outline: none; border-color: #2DD4A8; }
       .eg-input.error { border-color: #E05252; }
-      .eg-error {
-        color: #E05252; font-size: 12px; margin-top: 5px;
-        min-height: 16px;
-      }
+      .eg-error { color: #E05252; font-size: 12px; margin-top: 5px; min-height: 16px; }
       .eg-submit {
         background: #2DD4A8; color: #0F1419; border: none;
         width: 100%; padding: 13px; font-size: 14px; font-weight: 700;
@@ -198,14 +276,9 @@
       .eg-privacy {
         margin-top: 18px; padding: 12px 14px;
         background: rgba(45,212,168,0.06); border: 1px solid rgba(45,212,168,0.2);
-        border-radius: 6px; font-size: 11.5px; color: #B8C2CE;
-        line-height: 1.5;
+        border-radius: 6px; font-size: 11.5px; color: #B8C2CE; line-height: 1.5;
       }
       .eg-privacy strong { color: #2DD4A8; }
-      .eg-check {
-        color: #2DD4A8; font-size: 11px; font-family: "Courier New", monospace;
-        margin-top: 12px; text-align: center;
-      }
       .eg-spinner {
         display: inline-block; width: 14px; height: 14px;
         border: 2px solid rgba(15,20,25,0.3); border-top-color: #0F1419;
@@ -228,8 +301,8 @@
     overlay.id = 'eg-overlay';
     overlay.innerHTML = `
       <div class="eg-modal" role="dialog" aria-labelledby="eg-title">
-        <div class="eg-terminal"><span class="p">$</span> auth --tool=${CONFIG.toolName.split('—')[0].trim()}</div>
-        <div class="eg-badge">FREE ACCESS · NO SPAM</div>
+        <div class="eg-terminal"><span class="p">$</span> auth --verify=domain</div>
+        <div class="eg-badge">FREE ACCESS · VERIFIED EMAILS ONLY</div>
         <div class="eg-title" id="eg-title">One quick step to <span class="a">unlock this tool</span></div>
         <div class="eg-sub">Just your name + email. We'll email you the results, tips from the webinar, and next steps — nothing else.</div>
         
@@ -242,14 +315,14 @@
           
           <div class="eg-field">
             <label class="eg-label" for="eg-email">Work / personal email</label>
-            <input type="email" id="eg-email" class="eg-input" placeholder="name@example.com" autocomplete="email" required>
+            <input type="email" id="eg-email" class="eg-input" placeholder="name@company.com" autocomplete="email" required>
             <div class="eg-error" id="eg-email-error"></div>
           </div>
           
-          <button type="submit" class="eg-submit" id="eg-submit">Unlock &amp; Continue →</button>
+          <button type="submit" class="eg-submit" id="eg-submit">Verify &amp; Unlock →</button>
           
           <div class="eg-privacy">
-            <strong>🔒 Privacy first:</strong> Your email is stored securely and only used to send you QA career resources.
+            <strong>🔒 Privacy first:</strong> Your email is stored securely and only used for QA career resources.
             Your resume data (if you upload one) never leaves your browser — even we can't see it.
           </div>
         </form>
@@ -257,7 +330,6 @@
     `;
     document.body.appendChild(overlay);
 
-    // Wire up form
     const form = document.getElementById('eg-form');
     const nameInput = document.getElementById('eg-name');
     const emailInput = document.getElementById('eg-email');
@@ -265,7 +337,6 @@
     const emailError = document.getElementById('eg-email-error');
     const submitBtn = document.getElementById('eg-submit');
 
-    // Clear errors on typing
     nameInput.addEventListener('input', () => { nameError.textContent = ''; nameInput.classList.remove('error'); });
     emailInput.addEventListener('input', () => { emailError.textContent = ''; emailInput.classList.remove('error'); });
 
@@ -283,12 +354,20 @@
       if (hasError) return;
 
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span class="eg-spinner"></span>Verifying...';
+      submitBtn.innerHTML = '<span class="eg-spinner"></span>Verifying email domain...';
 
-      await submitToSheet(nameCheck.name, emailCheck.email);
+      const result = await submitToSheet(nameCheck.name, emailCheck.email);
+
+      if (result.serverRejected) {
+        // Server rejected the email — show error, let user retry
+        emailError.textContent = result.reason;
+        emailInput.classList.add('error');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Verify &amp; Unlock →';
+        return;
+      }
+
       saveRegistration(nameCheck.name, emailCheck.email);
-
-      // Success — brief confirmation then dismiss
       submitBtn.innerHTML = '✓ Verified — Opening tool';
       setTimeout(() => {
         overlay.style.transition = 'opacity 0.25s';
@@ -297,18 +376,16 @@
       }, 500);
     });
 
-    // Focus first field
     setTimeout(() => nameInput.focus(), 300);
   }
 
   // ─── INIT ────────────────────────────────────────────────────────────
   function init() {
-    if (isRegistered()) return; // Already registered — skip gate
+    if (isRegistered()) return;
     injectStyles();
     buildModal();
   }
 
-  // Wait for DOM
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
